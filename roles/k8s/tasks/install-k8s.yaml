@@ -1,0 +1,64 @@
+---
+# - name: 配置Kubernetes yum源
+#   copy:
+#     dest: /etc/yum.repos.d/kubernetes.repo
+#     content: |
+#       [kubernetes]
+#       name=Kubernetes
+#       baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+#       enabled=1
+#       gpgcheck=0
+#       repo_gpgcheck=0
+#       gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+
+# - name: 安装Kubernetes组件
+#   yum:
+#     name:
+#       - kubelet-1.28.0
+#       - kubeadm-1.28.0
+#       - kubectl-1.28.0
+#     state: present
+
+- name: 安装k8s组件
+  shell: rpm -Uvh  /opt/files/k8s/*
+
+- name: 启用kubelet服务
+  systemd:
+    name: kubelet
+    enabled: yes
+
+- name: 导入Kubernetes镜像
+  shell: docker load -i /opt/files/images/k8s/k8s-images-v1.28.15.tar
+
+- name: 导入Calico镜像
+  shell: docker load -i /opt/files/images/calico/calico-images-v3.24.1.tar
+
+- name: 登录Harbor镜像仓库
+  shell: docker login {{ harbor_host }}:{{ harbor_port }} -u admin -p {{ harbor_admin_password }}
+
+- name: 重新打标签Kubernetes镜像
+  shell: |
+    docker tag k8s.gcr.io/kube-apiserver:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-apiserver:v1.28.15
+    docker tag k8s.gcr.io/kube-controller-manager:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-controller-manager:v1.28.15
+    docker tag k8s.gcr.io/kube-scheduler:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-scheduler:v1.28.15
+    docker tag k8s.gcr.io/kube-proxy:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-proxy:v1.28.15
+    docker tag registry.k8s.io/pause:3.10 {{ harbor_host }}:{{ harbor_port }}/k8s/pause:3.10
+    docker tag k8s.gcr.io/coredns:v1.10.1 {{ harbor_host }}:{{ harbor_port }}/k8s/coredns:v1.10.1
+    docker tag k8s.gcr.io/etcd:3.5.9-0 {{ harbor_host }}:{{ harbor_port }}/k8s/etcd:3.5.9-0
+    docker tag calico/cni:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
+    docker tag calico/node:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
+    docker tag calico/kube-controllers:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/kube-controllers:v3.24.1
+
+- name: 推送镜像到Harbor
+  shell: |
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/kube-apiserver:v1.28.15
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/kube-controller-manager:v1.28.15
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/kube-scheduler:v1.28.15
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/kube-proxy:v1.28.15
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/pause:3.10
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/coredns:v1.10.1
+    docker push {{ harbor_host }}:{{ harbor_port }}/k8s/etcd:3.5.9-0 
+    docker push {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
+    docker push {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
+    docker push {{ harbor_host }}:{{ harbor_port }}/calico/kube-controllers:v3.24.1
+  when: k8s_role == 'master'

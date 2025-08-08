@@ -3,3 +3,13 @@
   tags: init
   roles:
     - role: init-server
+# 安装docker
+- hosts: docker
+  tags: docker
+  roles:
+    - role: docker
+# 安装harbor
+- hosts: harbor
+  tags: harbor
+  roles:
+    - role: harbor

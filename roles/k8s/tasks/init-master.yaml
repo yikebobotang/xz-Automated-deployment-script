@@ -1,0 +1,52 @@
+---
+- name: 初始化Master节点
+  shell: |
+    kubeadm init \
+      --apiserver-advertise-address={{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }} \
+      --image-repository {{ harbor_host }}:{{ harbor_port }}/k8s \
+      --kubernetes-version v1.28.15 \
+      --service-cidr=10.96.0.0/12 \
+      --pod-network-cidr=10.244.0.0/16 \
+      --cri-socket=unix:///var/run/cri-dockerd.sock
+  register: kubeadm_init_result
+
+
+- name: 创建kubectl配置目录
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+    mode: '0755'
+
+- name: 复制kubectl配置文件
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    remote_src: yes
+    mode: '0644'
+
+- name: 设置kubectl配置文件权限
+  file:
+    path: "{{ ansible_env.HOME }}/.kube/config"
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+
+# - name: 配置kubectl自动补全
+#   lineinfile:
+#     path: /etc/profile
+#     line: 'source <(kubectl completion bash)'
+#     state: present
+
+# - name: 应用环境变量
+#   shell: source /etc/profile
+
+- name: 获取加入集群命令并保存到文件
+  shell: kubeadm token create --print-join-command > /tmp/join-command.sh
+  register: join_command_result
+
+- name: 显示加入集群命令
+  shell: cat /tmp/join-command.sh
+  register: join_command_content
+
+- name: 显示加入集群命令内容
+  debug:
+    msg: "{{ join_command_content.stdout }}"

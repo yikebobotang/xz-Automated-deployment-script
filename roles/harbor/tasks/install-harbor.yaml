@@ -1,0 +1,57 @@
+---
+- name: 解压Harbor部署包
+  unarchive:
+    src: /opt/files/harbor-offline-installer-v2.12.1.tgz
+    dest: /opt
+    remote_src: yes
+
+- name: 进入Harbor安装目录
+  file:
+    path: {{ harbor_home }}
+    state: directory
+
+
+- name: 配置Harbor
+  template:
+    src: harbor.yml.j2
+    dest: {{ harbor_home }}/harbor.yml
+
+- name: 安装Harbor
+  shell: |
+    cd {{ harbor_home }}
+    ./install.sh
+  args:
+    chdir: {{ harbor_home }}
+
+- name: 检查Harbor服务状态
+  shell: docker ps | grep harbor
+  register: harbor_status
+  changed_when: false
+
+- name: 显示Harbor服务状态
+  debug:
+    msg: "{{ harbor_status.stdout }}"
+
+- name: Copy json file
+  copy:
+    src: "{{ item.file }}"
+    dest: /tmp/{{ item.file }}
+  with_items:
+    - file: createk8s.json
+    - file: createprometheus.json
+    - file: creategjdd.json
+
+- name: Pause 10
+  pause:
+    seconds: 10
+
+- name: Create program
+  shell:
+    cmd: |
+      curl -u "admin:{{ harbor_admin_password }}" -X POST -H "Content-Type: application/json" http://{{ harbor_host }}:{{ harbor_port }}/api/v2.0/projects -d @{{ item.file }}
+    warn: no
+    chdir: /tmp/
+  with_items:
+    - file: createk8s.json
+    - file: createprometheus.json
+    - file: creategjdd.json

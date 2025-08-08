@@ -1,0 +1,30 @@
+---
+- name: 创建docker用户组
+  group:
+    name: docker
+    state: present
+
+- name: 安装cri-dockerd
+  yum:
+    name: /opt/files/docker/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
+    state: present
+    disable_gpg_check: yes
+
+- name: 重新加载systemd配置
+  systemd:
+    daemon_reload: yes
+
+- name: 启动cri-docker服务
+  systemd:
+    name: cri-docker
+    state: started
+    enabled: yes
+
+- name: 检查cri-docker服务状态
+  systemd:
+    name: cri-docker
+  register: cri_docker_status
+
+- name: 显示cri-docker服务状态
+  debug:
+    msg: "cri-docker服务状态: {{ cri_docker_status.status.ActiveState }}" 

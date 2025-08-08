@@ -1,0 +1,6 @@
+- name: install docker
+  import_tasks: install-docker.yaml
+- name: Modify the configuration file
+  import_tasks: modify-config.yaml
+- name: install cri-dockerd
+  import_tasks: install-cri-dockerd.yaml

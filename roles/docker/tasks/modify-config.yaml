@@ -1,0 +1,23 @@
+---
+- name: 创建Docker配置目录
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: 配置Docker daemon.json - 有GPU
+  template:
+    src: daemon-gpu.json.j2
+    dest: /etc/docker/daemon.json
+  when: gpu == 1
+
+- name: 配置Docker daemon.json - 无GPU
+  template:
+    src: daemon-nogpu.json.j2
+    dest: /etc/docker/daemon.json
+  when: gpu == 0
+
+- name: 重启Docker服务以应用新配置
+  systemd:
+    name: docker
+    state: restarted

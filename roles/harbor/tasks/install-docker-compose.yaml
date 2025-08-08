@@ -1,0 +1,16 @@
+---
+- name: 移动docker-compose到/usr/bin
+  copy:
+    src: /opt/files/docker-compose/docker-compose
+    dest: /usr/bin/docker-compose
+    mode: '0755'
+    remote_src: yes
+
+- name: 验证docker-compose安装
+  command: docker-compose --version
+  register: docker_compose_version
+  changed_when: false
+
+- name: 显示docker-compose版本
+  debug:
+    msg: "{{ docker_compose_version.stdout }}" 

@@ -1,0 +1,8 @@
+{
+    "project_name": "k8s",
+    "metadata":
+    {
+      "public": "true",
+      "storage_limit": -1
+    }
+  }

@@ -1,0 +1,26 @@
+---
+- name: 复制Calico网络插件
+  template:
+    src: calico.yaml.j2
+    dest: /tmp/calico.yaml
+
+- name: 部署Calico网络插件
+  shell: kubectl apply -f /tmp/calico.yaml
+
+
+- name: 去除主节点不可调度的污点
+  shell: kubectl taint nodes {{ host_name }} node-role.kubernetes.io/control-plane:NoSchedule-
+
+- name: 给gpu服务器添加标签
+  shell: kubectl label nodes {{ host_name }} hardware-type=gpu
+  when: gpu == 1
+
+- name: 检查Calico Pod状态
+  shell: kubectl get pods -n kube-system | grep calico
+  register: calico_status
+
+
+- name: 显示Calico状态
+  debug:
+    msg: "{{ calico_status.stdout }}"
+

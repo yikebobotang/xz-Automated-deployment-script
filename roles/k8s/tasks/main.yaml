@@ -1,0 +1,11 @@
+- name: install k8s
+  import_tasks: install-k8s.yaml
+- name: init master
+  import_tasks: init-master.yaml
+  when: k8s_role == 'master'
+- name: join worker
+  import_tasks: join-worker.yaml
+  when: k8s_role == 'worker'
+- name: install calico
+  import_tasks: install-calico.yaml
+  when: k8s_role == 'master'
