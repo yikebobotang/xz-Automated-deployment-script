@@ -1,0 +1,8 @@
+- name: stop firewalld
+  import_tasks: firewalld.yaml
+
+- name: Configure the hostname
+  import_tasks: hostname.yaml
+
+- name: optimize host
+  import_tasks: optimize.yaml

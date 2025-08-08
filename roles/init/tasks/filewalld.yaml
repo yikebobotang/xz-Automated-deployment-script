@@ -1,0 +1,28 @@
+---
+- name: 关闭防火墙
+  systemd:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: 关闭SELinux - 修改配置文件
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: 'SELINUX=disabled'
+    state: present
+
+- name: 关闭SELinux - 临时设置
+  command: setenforce 0
+  ignore_errors: yes
+
+- name: 关闭swap - 临时
+  command: swapoff -a
+  ignore_errors: yes
+
+- name: 关闭swap - 永久修改fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: '.*swap.*'
+    line: '#&'
+    state: present

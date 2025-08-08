@@ -1,0 +1,11 @@
+---
+- name: Set hostname
+  hostname:
+    name: "{{ host_name }}"
+
+- name: add DNS
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item.key }} {{ item.value.host_name }}"
+  with_dict: "{{ hostvars }}"
+

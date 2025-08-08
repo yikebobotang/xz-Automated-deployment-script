@@ -1,0 +1,51 @@
+---
+- name: 修改系统最大打开文件数
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "* soft nofile 655350"
+    - "* hard nofile 655350"
+
+- name: 修改内核参数
+  lineinfile:
+    path: /etc/sysctl.conf
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "net.ipv4.tcp_syncookies = 1"
+    - "net.ipv4.tcp_max_tw_buckets = 20480"
+    - "net.ipv4.tcp_max_syn_backlog = 20480"
+    - "net.core.netdev_max_backlog = 262144"
+    - "net.ipv4.tcp_fin_timeout = 20"
+    - "fs.inotify.max_user_instances=8192"
+    - "fs.inotify.max_user_watches=524288"
+
+- name: 应用sysctl配置
+  shell: sysctl -p
+
+- name: 创建k8s sysctl配置文件
+  copy:
+    dest: /etc/sysctl.d/k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+
+- name: 加载br_netfilter模块
+  modprobe:
+    name: br_netfilter
+    state: present
+
+- name: 验证br_netfilter模块加载
+  shell: lsmod | grep br_netfilter
+  register: br_netfilter_check
+  changed_when: false
+
+- name: 显示br_netfilter模块状态
+  debug:
+    msg: "{{ br_netfilter_check.stdout }}"
+
+- name: 应用k8s sysctl配置
+  shell: sysctl -p /etc/sysctl.d/k8s.conf

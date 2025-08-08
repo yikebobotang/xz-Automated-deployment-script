@@ -1,4 +1,4 @@
-# 校正时间、关闭防火墙、安装JDK、内核优化
+# 关闭防火墙、设置主机名、内核优化
 - hosts: all-server
   tags: init
   roles:

@@ -1,5 +1,6 @@
 [all-server]
-192.168.0.183 host_name=hadoop1
+192.168.0.183 host_name=k8s-master01
+192.168.0.184 host_name=k8s-worker01
 
 
 
