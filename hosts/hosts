@@ -1,0 +1,13 @@
+[all-server]
+192.168.0.183 host_name=hadoop1
+
+
+
+
+[all:vars]
+ansible_ssh_port=22
+ansible_ssh_user=root
+ansible_ssh_pass=newerabc@123
+
+
+
