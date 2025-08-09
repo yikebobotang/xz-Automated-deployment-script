@@ -1,9 +1,26 @@
 ---
+- name: 检查Docker是否已安装
+  command: docker --version
+  register: docker_installed
+  failed_when: false
+  changed_when: false
+
+- name: 检查Docker安装包是否已解压
+  stat:
+    path: /opt/docker
+  register: docker_extracted
+
 - name: 解压Docker安装包
   unarchive:
     src: /opt/files/docker/docker-28.2.2.tgz
     dest: /opt
     remote_src: yes
+  when: docker_installed.rc != 0 and not docker_extracted.stat.exists
+
+- name: 检查Docker二进制文件是否存在
+  stat:
+    path: /usr/bin/docker
+  register: docker_binary
 
 - name: 将Docker二进制文件移动到/usr/bin
   copy:
@@ -11,28 +28,45 @@
     dest: /usr/bin/
     mode: '0755'
     remote_src: yes
+  when: docker_installed.rc != 0 and not docker_binary.stat.exists
 
 - name: 清理临时文件
   file:
     path: /opt/docker
     state: absent
+  when: docker_extracted.stat.exists
+
+- name: 检查Docker服务文件是否存在
+  stat:
+    path: /etc/systemd/system/docker.service
+  register: docker_service_file
 
 - name: 创建Docker服务文件
   template:
     src: docker.service.j2
     dest: /etc/systemd/system/docker.service
+  when: not docker_service_file.stat.exists
+  register: docker_service_created
 
 - name: 重新加载systemd配置
   systemd:
     daemon_reload: yes
+  when: docker_service_created.changed
+
+- name: 检查Docker服务状态
+  systemd:
+    name: docker
+  register: docker_service_status
+  failed_when: false
 
 - name: 启动Docker服务
   systemd:
     name: docker
     state: started
     enabled: yes
+  when: docker_service_status.status.ActiveState != "active"
 
-- name: 检查Docker服务状态
+- name: 最终检查Docker服务状态
   systemd:
     name: docker
   register: docker_status
@@ -40,3 +74,12 @@
 - name: 显示Docker服务状态
   debug:
     msg: "Docker服务状态: {{ docker_status.status.ActiveState }}"
+
+- name: 验证Docker安装
+  command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: 显示Docker版本
+  debug:
+    msg: "{{ docker_version.stdout }}"

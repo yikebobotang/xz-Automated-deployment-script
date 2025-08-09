@@ -1,0 +1,6 @@
+---
+- name: import image
+  import_tasks: import-image.yaml
+
+- name: install rancher
+  import_tasks: install-rancher.yaml

@@ -14,6 +14,19 @@
 192.168.0.183 k8s_role=master gpu=1
 192.168.0.184 k8s_role=worker gpu=0
 
+
+# 加入k8s主机
+[join-worker]
+192.168.0.184 host_name=k8s-worker0 k8s_role=worker gpu=0
+
+# 移除k8s主机
+[remove-worker]
+192.168.0.184 host_name=k8s-worker0 
+
+# 安装rancher主机
+[rancher]
+192.168.0.183
+
 [all:vars]
 ansible_ssh_port=22
 ansible_ssh_user=root

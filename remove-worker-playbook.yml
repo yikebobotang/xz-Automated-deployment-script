@@ -1,0 +1,24 @@
+---
+- name: 删除Kubernetes工作节点
+  hosts: k8s
+  become: yes
+  vars:
+    # 可选清理选项，默认为false（保守清理）
+    clean_docker_data: false          # 是否清理Docker数据目录
+    clean_docker_config: false        # 是否清理Docker配置
+    uninstall_k8s: false              # 是否卸载Kubernetes组件
+    uninstall_cri_dockerd: false      # 是否卸载cri-dockerd
+    remove_k8s_repo: false            # 是否删除Kubernetes yum源
+    
+    # 如果要完全清理，可以设置为true
+    # clean_docker_data: true
+    # clean_docker_config: true
+    # uninstall_k8s: true
+    # uninstall_cri_dockerd: true
+    # remove_k8s_repo: true
+
+  tasks:
+    - name: 删除工作节点
+      include_role:
+        name: remove-worker
+      when: k8s_role == 'worker' 

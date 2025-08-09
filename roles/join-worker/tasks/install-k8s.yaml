@@ -1,0 +1,2 @@
+- name: 安装k8s
+  include_tasks: ../../k8s/tasks/install-k8s.yaml

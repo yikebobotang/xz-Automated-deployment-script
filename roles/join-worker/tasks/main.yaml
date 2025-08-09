@@ -1,0 +1,10 @@
+- name: init host
+  import_tasks: init-host.yaml
+- name: install docker
+  import_tasks: install-docker.yaml
+- name: install cri-dockerd
+  import_tasks: install-cri-dockerd.yaml
+- name: install k8s
+  import_tasks: install-k8s.yaml
+- name: join worker
+  import_tasks: join-worker.yaml

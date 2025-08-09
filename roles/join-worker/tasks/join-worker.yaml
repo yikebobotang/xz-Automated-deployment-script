@@ -1,0 +1,37 @@
+---
+- name: 等待Master节点准备就绪
+  wait_for:
+    host: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+    port: 6443
+    delay: 10
+    timeout: 300
+
+- name: 在Master节点生成加入命令
+  shell: kubeadm token create --print-join-command > /tmp/join-command.sh
+  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+
+- name: 从Master节点复制加入命令文件
+  fetch:
+    src: /tmp/join-command.sh
+    dest: /tmp/join-command.sh
+    flat: yes
+  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+
+- name: 工作节点加入集群
+  shell: "bash /tmp/join-command.sh --cri-socket=unix:///var/run/cri-dockerd.sock"
+
+# - name: 重新打标签工作节点镜像
+#   shell: |
+#     docker tag /k8s/kube-proxy:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-proxy:v1.28.15
+#     docker tag registry.k8s.io/pause:3.10 {{ harbor_host }}:{{ harbor_port }}/k8s/pause:3.10
+#     docker tag {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
+#     docker tag {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
+
+- name: 检查节点状态
+  shell: kubectl get nodes
+  register: node_status
+  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+
+- name: 显示节点状态
+  debug:
+    msg: "{{ node_status.stdout }}" 

@@ -1,0 +1,6 @@
+---
+- name: 安装Docker
+  include_tasks: ../../docker/tasks/install-docker.yaml
+
+- name: 配置Docker
+  include_tasks: ../../docker/tasks/modify-config.yaml 

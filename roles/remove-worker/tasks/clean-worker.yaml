@@ -1,0 +1,57 @@
+---
+- name: 停止kubelet服务
+  systemd:
+    name: kubelet
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: 清理kubeadm配置
+  shell: kubeadm reset -f
+  ignore_errors: yes
+
+- name: 清理kubectl配置目录
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: absent
+
+- name: 清理Kubernetes配置文件
+  file:
+    path: /etc/kubernetes
+    state: absent
+
+- name: 清理kubelet数据目录
+  file:
+    path: /var/lib/kubelet
+    state: absent
+
+- name: 清理CNI配置
+  file:
+    path: /etc/cni/net.d
+    state: absent
+
+- name: 清理临时文件
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/join-command.sh
+    - /tmp/calico.yaml
+
+- name: 清理iptables规则
+  shell: |
+    iptables -F
+    iptables -t nat -F
+    iptables -t mangle -F
+    iptables -X
+  ignore_errors: yes
+
+- name: 清理ipvs规则
+  shell: ipvsadm -C
+  ignore_errors: yes
+
+- name: 重启网络服务
+  systemd:
+    name: NetworkManager
+    state: restarted
+  ignore_errors: yes 

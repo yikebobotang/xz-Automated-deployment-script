@@ -12,7 +12,12 @@ install_docker() {
 install_harbor() {
     ansible-playbook -i host/hosts --tags="harbor" setup.yaml -f 20
 }
-
+join_worker() {
+    ansible-playbook -i host/hosts --tags="join-worker" setup.yaml -f 20
+}
+remove_worker() {
+    ansible-playbook -i host/hosts --tags="remove-worker" setup.yaml -f 20
+}
 menu_list() {
     echo "##################################################"
     echo "#                  一键部署脚本                   #"
@@ -20,6 +25,7 @@ menu_list() {
     echo "      [1]   所有主机进行系统初始化操作              "
     echo "      [2]   安装docker                              "
     echo "      [3]   安装harbor                              "
+    echo "      [A]   加入k8s集群                              "
     echo "##################################################"
     read -r -p "请输入你的编号来选择进行安装【0-2】: " number
 }
@@ -38,6 +44,12 @@ main() {
                 ;;
             3)
                 install_harbor
+                ;;
+            A)
+                join_worker
+                ;;
+            R)
+                remove_worker
                 ;;
             Q|q)
                 break

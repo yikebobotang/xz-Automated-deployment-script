@@ -13,3 +13,17 @@
   tags: harbor
   roles:
     - role: harbor
+
+# 加入k8s集群
+- hosts: join-worker
+  tags: join-worker
+  roles:
+    - role: join-worker
+
+# 移除k8s集群
+- hosts: remove-worker
+  tags: remove-worker
+  roles:
+    - role: remove-worker
+
+

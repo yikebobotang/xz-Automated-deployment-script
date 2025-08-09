@@ -1,0 +1,46 @@
+---
+- name: 停止cri-docker服务
+  systemd:
+    name: cri-docker
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: 停止Docker服务
+  systemd:
+    name: docker
+    state: stopped
+    enabled: no
+  ignore_errors: yes
+
+- name: 清理Docker数据（可选）
+  file:
+    path: "{{ docker_data_path }}"
+    state: absent
+  when: clean_docker_data | default(false)
+
+- name: 清理Docker配置
+  file:
+    path: /etc/docker
+    state: absent
+  when: clean_docker_config | default(false)
+
+- name: 卸载Kubernetes组件（可选）
+  yum:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: absent
+  when: uninstall_k8s | default(false)
+
+- name: 卸载cri-dockerd
+  yum:
+    name: cri-dockerd
+    state: absent
+  when: uninstall_cri_dockerd | default(false)
+
+
+- name: 显示清理完成信息
+  debug:
+    msg: "工作节点 {{ host_name }} 已完成清理" 

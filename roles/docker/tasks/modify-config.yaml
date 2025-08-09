@@ -5,6 +5,10 @@
     state: directory
     mode: '0755'
 
+- name: 安装nvidia-docker
+  shell: rpm -ivh /opt/files/dockerqudong/*.rpm --nodeps --force
+  when: gpu == 1
+
 - name: 配置Docker daemon.json - 有GPU
   template:
     src: daemon-gpu.json.j2

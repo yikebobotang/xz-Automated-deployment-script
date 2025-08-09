@@ -1,0 +1,12 @@
+---
+- name: drain worker node
+  import_tasks: drain-worker.yaml
+
+- name: remove worker node
+  import_tasks: remove-worker.yaml
+
+- name: clean worker node
+  import_tasks: clean-worker.yaml
+
+- name: stop services
+  import_tasks: stop-services.yaml 

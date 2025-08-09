@@ -1,30 +1,58 @@
 ---
-- name: 创建docker用户组
+- name: 检查docker用户组是否存在
   group:
     name: docker
     state: present
+  register: docker_group_result
+
+- name: 检查cri-dockerd是否已安装
+  command: rpm -qa | grep cri-dockerd
+  register: cri_dockerd_installed
+  failed_when: false
+  changed_when: false
 
 - name: 安装cri-dockerd
   yum:
     name: /opt/files/docker/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
     state: present
     disable_gpg_check: yes
+  when: cri_dockerd_installed.rc != 0
+  register: cri_dockerd_installation
 
 - name: 重新加载systemd配置
   systemd:
     daemon_reload: yes
+  when: cri_dockerd_installation.changed
+
+- name: 检查cri-docker服务状态
+  systemd:
+    name: cri-docker
+  register: cri_docker_current_status
+  failed_when: false
 
 - name: 启动cri-docker服务
   systemd:
     name: cri-docker
     state: started
     enabled: yes
+  when: cri_docker_current_status.status.ActiveState != "active"
 
-- name: 检查cri-docker服务状态
+- name: 最终检查cri-docker服务状态
   systemd:
     name: cri-docker
   register: cri_docker_status
 
 - name: 显示cri-docker服务状态
   debug:
-    msg: "cri-docker服务状态: {{ cri_docker_status.status.ActiveState }}" 
+    msg: "cri-docker服务状态: {{ cri_docker_status.status.ActiveState }}"
+
+- name: 验证cri-dockerd安装
+  command: cri-dockerd --version
+  register: cri_dockerd_version
+  changed_when: false
+  failed_when: false
+
+- name: 显示cri-dockerd版本
+  debug:
+    msg: "{{ cri_dockerd_version.stdout }}"
+  when: cri_dockerd_version.rc == 0 
