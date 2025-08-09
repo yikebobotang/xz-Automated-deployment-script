@@ -4,7 +4,7 @@
   roles:
     - role: init-server
 # 安装docker
-- hosts: docker
+- hosts: k8s
   tags: docker
   roles:
     - role: docker
