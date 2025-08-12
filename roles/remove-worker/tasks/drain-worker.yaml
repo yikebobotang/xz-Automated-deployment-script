@@ -1,20 +1,50 @@
 ---
 - name: 检查节点是否存在于集群中
-  shell: kubectl get nodes | grep {{ host_name }}
+  shell: kubectl get nodes | grep "{{ host_name }}"
   register: node_exists
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
   failed_when: false
   changed_when: false
 
+- name: 显示节点检查结果
+  debug:
+    msg: "节点检查结果: rc={{ node_exists.rc }}, stdout={{ node_exists.stdout }}"
+
 - name: 标记节点为不可调度
-  shell: kubectl cordon {{ host_name }}
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+  shell: kubectl cordon "{{ host_name }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0
 
-- name: 驱逐节点上的Pod
-  shell: kubectl drain {{ host_name }} --ignore-daemonsets --delete-emptydir-data --force
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+- name: 驱逐节点上的Pod（带超时）
+  shell: kubectl drain "{{ host_name }}" --ignore-daemonsets --delete-emptydir-data --force
+  delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0
+  async: 300
+  poll: 10
+  register: drain_result
+
+- name: 检查drain命令是否超时
+  debug:
+    msg: "drain命令执行状态: {{ drain_result }}"
+  when: node_exists.rc == 0
+
+- name: 检查是否有终止的容器
+  shell: kubectl get pods --all-namespaces -o wide | grep "{{ host_name }}" | grep -E "(Terminating|Pending|Failed)"
+  register: terminating_pods
+  delegate_to: "{{ groups['k8s'][0] }}"
+  when: node_exists.rc == 0 and (drain_result is failed or drain_result.ansible_job_id is defined)
+
+- name: 显示终止的Pod
+  debug:
+    msg: "发现终止的Pod: {{ terminating_pods.stdout_lines }}"
+  when: node_exists.rc == 0 and terminating_pods.stdout != ""
+
+- name: 强制删除终止的Pod
+  shell: kubectl delete pod {{ item.split()[1] }} --namespace={{ item.split()[0] }} --force --grace-period=0
+  delegate_to: "{{ groups['k8s'][0] }}"
+  when: node_exists.rc == 0 and terminating_pods.stdout != ""
+  loop: "{{ terminating_pods.stdout_lines }}"
+  ignore_errors: yes
 
 - name: 等待Pod迁移完成
   pause:
@@ -22,9 +52,9 @@
   when: node_exists.rc == 0
 
 - name: 检查节点状态
-  shell: kubectl get nodes {{ host_name }}
+  shell: kubectl get nodes "{{ host_name }}"
   register: node_status
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master') | first]['ansible_host'] }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0
 
 - name: 显示节点状态

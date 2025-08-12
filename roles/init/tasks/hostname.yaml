@@ -3,9 +3,17 @@
   hostname:
     name: "{{ host_name }}"
 
-- name: add DNS
+- name: 清理旧的hosts条目
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^192\.168\.0\.'
+    state: absent
+
+- name: 添加DNS条目
   lineinfile:
     path: /etc/hosts
     line: "{{ item.key }} {{ item.value.host_name }}"
+    state: present
   with_dict: "{{ hostvars }}"
+  when: item.value.host_name is defined
 

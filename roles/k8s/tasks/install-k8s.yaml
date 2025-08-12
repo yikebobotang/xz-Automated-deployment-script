@@ -19,22 +19,66 @@
 #       - kubectl-1.28.0
 #     state: present
 
+- name: 检查k8s RPM包目录是否存在
+  stat:
+    path: /opt/files/k8s
+  register: k8s_rpm_dir
+
+- name: 检查k8s RPM包文件
+  find:
+    paths: /opt/files/k8s
+    patterns: "*.rpm"
+  register: k8s_rpm_files
+  when: k8s_rpm_dir.stat.exists
+
+- name: 显示找到的RPM包
+  debug:
+    msg: "找到的RPM包: {{ k8s_rpm_files.files | map(attribute='path') | list }}"
+  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
+
 - name: 安装k8s组件
-  shell: rpm -Uvh  /opt/files/k8s/*
+  shell: rpm -Uvh /opt/files/k8s/*.rpm
+  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
+  register: k8s_install_result
+
+- name: 显示安装结果
+  debug:
+    msg: "k8s安装结果: {{ k8s_install_result }}"
+  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
 
 - name: 启用kubelet服务
   systemd:
     name: kubelet
     enabled: yes
 
+- name: 检查Docker镜像文件是否存在
+  stat:
+    path: /opt/files/images/k8s/k8s-images-v1.28.15.tar
+  register: k8s_images_file
+
 - name: 导入Kubernetes镜像
   shell: docker load -i /opt/files/images/k8s/k8s-images-v1.28.15.tar
+  when: k8s_images_file.stat.exists
+
+- name: 检查Calico镜像文件是否存在
+  stat:
+    path: /opt/files/images/calico/calico-images-v3.24.1.tar
+  register: calico_images_file
 
 - name: 导入Calico镜像
   shell: docker load -i /opt/files/images/calico/calico-images-v3.24.1.tar
+  when: calico_images_file.stat.exists
 
 - name: 登录Harbor镜像仓库
   shell: docker login {{ harbor_host }}:{{ harbor_port }} -u admin -p {{ harbor_admin_password }}
+
+- name: 从Harbor拉取Kubernetes镜像（worker节点）
+  shell: |
+    docker pull {{ harbor_host }}:{{ harbor_port }}/k8s/kube-proxy:v1.28.15
+    docker pull {{ harbor_host }}:{{ harbor_port }}/k8s/pause:3.10
+    docker pull {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
+    docker pull {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
+  when: k8s_role == 'worker'
 
 - name: 重新打标签Kubernetes镜像
   shell: |
@@ -48,6 +92,7 @@
     docker tag calico/cni:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
     docker tag calico/node:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
     docker tag calico/kube-controllers:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/kube-controllers:v3.24.1
+  when: (k8s_images_file.stat.exists or calico_images_file.stat.exists) and k8s_role == 'master'
 
 - name: 推送镜像到Harbor
   shell: |
@@ -61,4 +106,4 @@
     docker push {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
     docker push {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
     docker push {{ harbor_host }}:{{ harbor_port }}/calico/kube-controllers:v3.24.1
-  when: k8s_role == 'master'
+  when: (k8s_images_file.stat.exists or calico_images_file.stat.exists) and k8s_role == 'master'

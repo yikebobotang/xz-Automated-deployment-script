@@ -1,31 +1,31 @@
 # 所有主机
 [all-server]
-192.168.0.183 host_name=k8s-master01
-192.168.0.184 host_name=k8s-worker01
+192.168.0.110 host_name=k8s-master01
+192.168.0.111 host_name=k8s-worker02
 
 
 
 # 安装harbor主机
 [harbor]
-192.168.0.183
+192.168.0.110
 
 # 安装k8s主机,gpu=1为有gpu服务器,gpu=0为无gpu服务器
 [k8s]
-192.168.0.183 k8s_role=master gpu=1
-192.168.0.184 k8s_role=worker gpu=0
+192.168.0.110 k8s_role=master gpu=0
+192.168.0.111 k8s_role=worker gpu=0
 
 
 # 加入k8s主机
 [join-worker]
-192.168.0.184 host_name=k8s-worker0 k8s_role=worker gpu=0
+192.168.0.111 host_name=k8s-worker01 k8s_role=worker gpu=0
 
 # 移除k8s主机
 [remove-worker]
-192.168.0.184 host_name=k8s-worker0 
+192.168.0.111 host_name=k8s-worker01 
 
 # 安装rancher主机
 [rancher]
-192.168.0.183
+192.168.0.110
 
 [all:vars]
 ansible_ssh_port=22
@@ -38,7 +38,7 @@ docker_home_dir=/data/docker
 # harbor安装目录
 harbor_home=/data/harbor
 # harbor地址
-harbor_host=192.168.0.183
+harbor_host=192.168.0.110
 # harbor管理员密码
 harbor_admin_password=Harbor12345
 

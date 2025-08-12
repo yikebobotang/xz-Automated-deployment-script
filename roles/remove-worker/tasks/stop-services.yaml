@@ -13,19 +13,52 @@
     enabled: no
   ignore_errors: yes
 
-- name: 清理Docker数据（可选）
+- name: 卸载cri-dockerd包
+  yum:
+    name: cri-dockerd
+    state: absent
+  when: uninstall_cri_dockerd | default(false)
+  ignore_errors: yes
+
+- name: 删除Docker二进制文件
   file:
-    path: "{{ docker_data_path }}"
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/bin/docker
+    - /usr/bin/docker-containerd
+    - /usr/bin/docker-containerd-ctr
+    - /usr/bin/docker-containerd-shim
+    - /usr/bin/docker-init
+    - /usr/bin/docker-proxy
+    - /usr/bin/dockerd
+  when: uninstall_docker | default(false)
+
+- name: 删除Docker服务文件
+  file:
+    path: /etc/systemd/system/docker.service
+    state: absent
+  when: uninstall_docker | default(false)
+
+- name: 删除Docker数据目录
+  file:
+    path: "{{ docker_home_dir | default('/var/lib/docker') }}"
     state: absent
   when: clean_docker_data | default(false)
 
-- name: 清理Docker配置
+- name: 删除Docker配置目录
   file:
     path: /etc/docker
     state: absent
   when: clean_docker_config | default(false)
 
-- name: 卸载Kubernetes组件（可选）
+- name: 删除Docker临时文件
+  file:
+    path: /opt/docker
+    state: absent
+  when: uninstall_docker | default(false)
+
+- name: 卸载Kubernetes组件
   yum:
     name:
       - kubelet
@@ -33,13 +66,30 @@
       - kubectl
     state: absent
   when: uninstall_k8s | default(false)
+  ignore_errors: yes
 
-- name: 卸载cri-dockerd
-  yum:
-    name: cri-dockerd
+- name: 删除Kubernetes RPM包
+  shell: rpm -e $(rpm -qa | grep -E "(kubelet|kubeadm|kubectl)")
+  when: uninstall_k8s | default(false)
+  ignore_errors: yes
+
+- name: 删除Kubernetes镜像
+  shell: |
+    docker rmi $(docker images | grep -E "(k8s|calico)" | awk '{print $3}') 2>/dev/null || true
+  when: clean_docker_data | default(false)
+  ignore_errors: yes
+
+- name: 删除docker用户组
+  group:
+    name: docker
     state: absent
-  when: uninstall_cri_dockerd | default(false)
+  when: uninstall_docker | default(false)
+  ignore_errors: yes
 
+- name: 重新加载systemd配置
+  systemd:
+    daemon_reload: yes
+  when: uninstall_docker | default(false) or uninstall_cri_dockerd | default(false)
 
 - name: 显示清理完成信息
   debug:

@@ -2,7 +2,7 @@
 - hosts: all-server
   tags: init
   roles:
-    - role: init-server
+    - role: init
 # 安装docker
 - hosts: k8s
   tags: docker

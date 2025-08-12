@@ -7,21 +7,21 @@
 
 - name: 进入Harbor安装目录
   file:
-    path: {{ harbor_home }}
+    path: "{{ harbor_home }}"
     state: directory
 
 
 - name: 配置Harbor
   template:
     src: harbor.yml.j2
-    dest: {{ harbor_home }}/harbor.yml
+    dest: "{{ harbor_home }}/harbor.yml"
 
 - name: 安装Harbor
   shell: |
-    cd {{ harbor_home }}
+    cd "{{ harbor_home }}"
     ./install.sh
   args:
-    chdir: {{ harbor_home }}
+    chdir: "{{ harbor_home }}"
 
 - name: 检查Harbor服务状态
   shell: docker ps | grep harbor
@@ -35,7 +35,7 @@
 - name: Copy json file
   copy:
     src: "{{ item.file }}"
-    dest: /tmp/{{ item.file }}
+    dest: "/tmp/{{ item.file }}"
   with_items:
     - file: createk8s.json
     - file: createprometheus.json
@@ -48,7 +48,7 @@
 - name: Create program
   shell:
     cmd: |
-      curl -u "admin:{{ harbor_admin_password }}" -X POST -H "Content-Type: application/json" http://{{ harbor_host }}:{{ harbor_port }}/api/v2.0/projects -d @{{ item.file }}
+      curl -u "admin:{{ harbor_admin_password }}" -X POST -H "Content-Type: application/json" "http://{{ harbor_host }}:{{ harbor_port }}/api/v2.0/projects" -d @"{{ item.file }}"
     warn: no
     chdir: /tmp/
   with_items:

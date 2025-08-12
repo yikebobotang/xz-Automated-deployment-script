@@ -8,6 +8,7 @@
     clean_docker_config: false        # 是否清理Docker配置
     uninstall_k8s: false              # 是否卸载Kubernetes组件
     uninstall_cri_dockerd: false      # 是否卸载cri-dockerd
+    uninstall_docker: false           # 是否完全卸载Docker
     remove_k8s_repo: false            # 是否删除Kubernetes yum源
     
     # 如果要完全清理，可以设置为true
@@ -15,6 +16,7 @@
     # clean_docker_config: true
     # uninstall_k8s: true
     # uninstall_cri_dockerd: true
+    # uninstall_docker: true
     # remove_k8s_repo: true
 
   tasks:

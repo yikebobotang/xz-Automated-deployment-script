@@ -46,8 +46,21 @@
     iptables -X
   ignore_errors: yes
 
+- name: 检查ipvsadm命令是否存在
+  stat:
+    path: /usr/sbin/ipvsadm
+  register: ipvsadm_check
+
 - name: 清理ipvs规则
   shell: ipvsadm -C
+  when: ipvsadm_check.stat.exists
+  ignore_errors: yes
+
+- name: 清理/etc/hosts中的集群主机条目
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^192\.168\.0\.'
+    state: absent
   ignore_errors: yes
 
 - name: 重启网络服务

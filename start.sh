@@ -2,21 +2,21 @@
 # 一键部署脚本
 
 init_server() {
-    ansible-playbook -i host/hosts --tags="init" setup.yaml -f 20
+    ansible-playbook -i hosts/hosts --tags="init" setup.yaml -f 20
 }
 
 install_docker() {
-    ansible-playbook -i host/hosts --tags="docker" setup.yaml -f 20
+    ansible-playbook -i hosts/hosts --tags="docker" setup.yaml -f 20
 }
 
 install_harbor() {
-    ansible-playbook -i host/hosts --tags="harbor" setup.yaml -f 20
+    ansible-playbook -i hosts/hosts --tags="harbor" setup.yaml -f 20
 }
 join_worker() {
-    ansible-playbook -i host/hosts --tags="join-worker" setup.yaml -f 20
+    ansible-playbook -i hosts/hosts --tags="join-worker" setup.yaml -f 20
 }
 remove_worker() {
-    ansible-playbook -i host/hosts --tags="remove-worker" setup.yaml -f 20
+    ansible-playbook -i hosts/hosts --tags="remove-worker" setup.yaml -f 20
 }
 menu_list() {
     echo "##################################################"
@@ -26,6 +26,7 @@ menu_list() {
     echo "      [2]   安装docker                              "
     echo "      [3]   安装harbor                              "
     echo "      [A]   加入k8s集群                              "
+    echo "      [R]   移除k8s集群                              "
     echo "##################################################"
     read -r -p "请输入你的编号来选择进行安装【0-2】: " number
 }

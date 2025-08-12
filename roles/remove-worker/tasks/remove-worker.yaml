@@ -1,13 +1,13 @@
 ---
 - name: 从集群中删除节点
-  shell: kubectl delete node {{ host_name }}
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master01') | first]['ansible_host'] }}"
+  shell: kubectl delete node "{{ host_name }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0
 
 - name: 验证节点已删除
-  shell: kubectl get nodes | grep {{ host_name }}
+  shell: kubectl get nodes | grep "{{ host_name }}"
   register: node_removed
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master01') | first]['ansible_host'] }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
   failed_when: false
   changed_when: false
 
@@ -19,7 +19,7 @@
 - name: 显示当前集群节点列表
   shell: kubectl get nodes
   register: cluster_nodes
-  delegate_to: "{{ hostvars[groups['k8s'] | selectattr('k8s_role', 'equalto', 'master01') | first]['ansible_host'] }}"
+  delegate_to: "{{ groups['k8s'][0] }}"
 
 - name: 显示集群节点状态
   debug:
