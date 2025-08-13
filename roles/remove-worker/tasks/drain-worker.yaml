@@ -19,7 +19,7 @@
   shell: kubectl drain "{{ host_name }}" --ignore-daemonsets --delete-emptydir-data --force
   delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0
-  async: 300
+  async: 600
   poll: 10
   register: drain_result
 
@@ -33,6 +33,7 @@
   register: terminating_pods
   delegate_to: "{{ groups['k8s'][0] }}"
   when: node_exists.rc == 0 and (drain_result is failed or drain_result.ansible_job_id is defined)
+  failed_when: false
 
 - name: 显示终止的Pod
   debug:
@@ -60,4 +61,4 @@
 - name: 显示节点状态
   debug:
     msg: "{{ node_status.stdout }}"
-  when: node_exists.rc == 0 
+  when: node_exists.rc == 0

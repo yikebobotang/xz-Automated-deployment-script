@@ -10,11 +10,24 @@
     path: /opt/docker
   register: docker_extracted
 
-- name: 解压Docker安装包
+- name: 创建目标目录
+  file:
+    path: "{{ docker_home_dir }}"
+    state: directory
+    mode: '0755'
+  when: docker_installed.rc != 0 and not docker_extracted.stat.exists
+
+- name: 确保/opt/docker目录存在
+  file:
+    path: /opt/docker
+    state: directory
+    mode: '0755'
+  when: docker_installed.rc != 0 and not docker_extracted.stat.exists
+
+- name: 解压Docker安装包到远程节点
   unarchive:
     src: /opt/files/docker/docker-28.2.2.tgz
-    dest: /opt
-    remote_src: yes
+    dest: /opt/
   when: docker_installed.rc != 0 and not docker_extracted.stat.exists
 
 - name: 检查Docker二进制文件是否存在
@@ -23,11 +36,7 @@
   register: docker_binary
 
 - name: 将Docker二进制文件移动到/usr/bin
-  copy:
-    src: /opt/docker/
-    dest: /usr/bin/
-    mode: '0755'
-    remote_src: yes
+  shell: mv  /opt/docker/* /usr/bin/
   when: docker_installed.rc != 0 and not docker_binary.stat.exists
 
 - name: 清理临时文件

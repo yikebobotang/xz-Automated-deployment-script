@@ -6,45 +6,72 @@
   register: docker_group_result
 
 - name: 检查cri-dockerd是否已安装
-  command: rpm -qa | grep cri-dockerd
+  shell: rpm -qa | grep cri-dockerd
   register: cri_dockerd_installed
   failed_when: false
   changed_when: false
 
-- name: 安装cri-dockerd
+- name: 卸载可能存在的cri-dockerd
   yum:
-    name: /opt/files/docker/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
-    state: present
-    disable_gpg_check: yes
-  when: cri_dockerd_installed.rc != 0
+    name: cri-dockerd
+    state: absent
+  when: cri_dockerd_installed.rc == 0
+  register: cri_dockerd_uninstalled
+
+- name: 传输cri-dockerd安装包到目标服务器
+  copy:
+    src: /opt/files/docker/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
+    dest: /tmp/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
+  when: cri_dockerd_installed.rc != 0 or (cri_dockerd_uninstalled is defined and cri_dockerd_uninstalled.changed)
+
+- name: 安装cri-dockerd
+  shell: rpm -Uvh /tmp/cri-dockerd-0.4.0-3.fc35.x86_64.rpm --force --nodeps
+  when: cri_dockerd_installed.rc != 0 or (cri_dockerd_uninstalled is defined and cri_dockerd_uninstalled.changed)
   register: cri_dockerd_installation
+  failed_when: cri_dockerd_installation.rc != 0
+  changed_when: true
+
+- name: 清理临时文件
+  file:
+    path: /tmp/cri-dockerd-0.4.0-3.fc35.x86_64.rpm
+    state: absent
+  when: cri_dockerd_installation.changed
 
 - name: 重新加载systemd配置
   systemd:
     daemon_reload: yes
   when: cri_dockerd_installation.changed
 
-- name: 检查cri-docker服务状态
+- name: 检查cri-dockerd服务文件是否存在
+  stat:
+    path: /usr/lib/systemd/system/cri-docker.service
+  register: cri_docker_service_file
+
+- name: 显示服务文件状态
+  debug:
+    msg: "cri-docker服务文件存在: {{ cri_docker_service_file.stat.exists }}"
+
+- name: 检查cri-dockerd服务状态
   systemd:
     name: cri-docker
   register: cri_docker_current_status
   failed_when: false
 
-- name: 启动cri-docker服务
+- name: 启动cri-dockerd服务
   systemd:
     name: cri-docker
     state: started
     enabled: yes
   when: cri_docker_current_status.status.ActiveState != "active"
 
-- name: 最终检查cri-docker服务状态
+- name: 最终检查cri-dockerd服务状态
   systemd:
     name: cri-docker
   register: cri_docker_status
 
-- name: 显示cri-docker服务状态
+- name: 显示cri-dockerd服务状态
   debug:
-    msg: "cri-docker服务状态: {{ cri_docker_status.status.ActiveState }}"
+    msg: "cri-dockerd服务状态: {{ cri_docker_status.status.ActiveState }}"
 
 - name: 验证cri-dockerd安装
   command: cri-dockerd --version
@@ -55,4 +82,4 @@
 - name: 显示cri-dockerd版本
   debug:
     msg: "{{ cri_dockerd_version.stdout }}"
-  when: cri_dockerd_version.rc == 0 
+  when: cri_dockerd_version.rc == 0
