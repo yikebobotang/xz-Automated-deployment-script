@@ -60,12 +60,9 @@
   shell: "bash /tmp/join-command.sh --cri-socket=unix:///var/run/cri-dockerd.sock"
   when: join_file_worker.stat.exists
 
-# - name: 重新打标签工作节点镜像
-#   shell: |
-#     docker tag /k8s/kube-proxy:v1.28.15 {{ harbor_host }}:{{ harbor_port }}/k8s/kube-proxy:v1.28.15
-#     docker tag registry.k8s.io/pause:3.10 {{ harbor_host }}:{{ harbor_port }}/k8s/pause:3.10
-#     docker tag {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1 {{ harbor_host }}:{{ harbor_port }}/calico/cni:v3.24.1
-#     docker tag {{ harbor_host }}:{{ harbor_port }}/calico/node:v3.24.1
+- name: 等待60秒让节点状态稳定
+  pause:
+    seconds: 60
 
 - name: 检查节点状态
   shell: kubectl get nodes
@@ -74,4 +71,4 @@
 
 - name: 显示节点状态
   debug:
-    msg: "{{ node_status.stdout }}" 
+    msg: "{{ node_status.stdout }}"

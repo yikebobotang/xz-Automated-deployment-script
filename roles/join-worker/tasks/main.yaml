@@ -1,3 +1,15 @@
+- name: 检查主机名是否冲突
+  shell: kubectl get nodes | grep {{ host_name }}
+  delegate_to: "{{ groups['k8s'][0] }}"
+  register: node_name_check
+  failed_when: false
+  changed_when: false
+
+- name: 验证主机名是否冲突
+  fail:
+    msg: "错误: 节点主机名 '{{ host_name }}' 已存在，请更改主机名后再试"
+  when: node_name_check.rc == 0
+
 - name: init host
   import_tasks: init-host.yaml
 - name: install docker

@@ -19,7 +19,7 @@
 [join-worker]
 192.168.0.111 host_name=k8s-worker01 k8s_role=worker gpu=0
 
-# 移除k8s主机
+# 移除k8s主机 ，uninstall_cri_dockerd=false uninstall_docker=false clean_docker_data=false clean_docker_config=false uninstall_k8s=false 表示不移除docker和k8s
 [remove-worker]
 192.168.0.111 host_name=k8s-worker01 
 

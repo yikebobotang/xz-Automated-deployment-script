@@ -4,3 +4,5 @@
   import_tasks: modify-config.yaml
 - name: install cri-dockerd
   import_tasks: install-cri-dockerd.yaml
+- name: install docker-compose
+  import_tasks: install-docker-compose.yaml

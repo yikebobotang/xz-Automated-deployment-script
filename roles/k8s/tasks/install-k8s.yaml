@@ -1,72 +1,112 @@
 ---
-# - name: 配置Kubernetes yum源
-#   copy:
-#     dest: /etc/yum.repos.d/kubernetes.repo
-#     content: |
-#       [kubernetes]
-#       name=Kubernetes
-#       baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
-#       enabled=1
-#       gpgcheck=0
-#       repo_gpgcheck=0
-#       gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
 
-# - name: 安装Kubernetes组件
-#   yum:
-#     name:
-#       - kubelet-1.28.0
-#       - kubeadm-1.28.0
-#       - kubectl-1.28.0
-#     state: present
+- name: 检查k8s是否安装
+  shell: kubelet --version
+  register: k8s_installed
+  failed_when: false
+  changed_when: false
 
-- name: 检查k8s RPM包目录是否存在
-  stat:
-    path: /opt/files/k8s
-  register: k8s_rpm_dir
+- name: 创建临时目录/tmp/k8s
+  file:
+    path: /tmp/k8s
+    state: directory
+    mode: '0755'
+  when: k8s_installed.rc != 0
 
-- name: 检查k8s RPM包文件
+- name: 复制k8s安装包到目标节点/tmp/k8s目录
+  copy:
+    src: /opt/files/k8s/
+    dest: /tmp/k8s/
+  when: k8s_installed.rc != 0
+
+- name: 检查复制后的RPM包
   find:
-    paths: /opt/files/k8s
+    paths: /tmp/k8s
     patterns: "*.rpm"
-  register: k8s_rpm_files
-  when: k8s_rpm_dir.stat.exists
+  register: tmp_k8s_rpm_files
+  when: k8s_installed.rc != 0
 
-- name: 显示找到的RPM包
-  debug:
-    msg: "找到的RPM包: {{ k8s_rpm_files.files | map(attribute='path') | list }}"
-  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
+- name: 验证是否找到RPM包
+  fail:
+    msg: "在/tmp/k8s目录下未找到任何RPM包，请检查源文件路径是否正确"
+  when: k8s_installed.rc != 0 and (tmp_k8s_rpm_files.files is undefined or tmp_k8s_rpm_files.files | length == 0)
 
 - name: 安装k8s组件
-  shell: rpm -Uvh /opt/files/k8s/*.rpm
-  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
+  shell: rpm -Uvh /tmp/k8s/*.rpm --force --nodeps
+  when: k8s_installed.rc != 0 and tmp_k8s_rpm_files.files | length > 0
   register: k8s_install_result
+  failed_when: k8s_install_result.rc != 0
+
+- name: 删除临时目录/tmp/k8s
+  file:
+    path: /tmp/k8s
+    state: absent
+  when: k8s_installed.rc != 0
 
 - name: 显示安装结果
   debug:
     msg: "k8s安装结果: {{ k8s_install_result }}"
-  when: k8s_rpm_dir.stat.exists and k8s_rpm_files.files | length > 0
+  when: k8s_installed.rc != 0
 
 - name: 启用kubelet服务
   systemd:
     name: kubelet
     enabled: yes
+    state: started
+  when: k8s_installed.rc != 0
 
-- name: 检查Docker镜像文件是否存在
+- name: 创建k8s镜像临时目录
+  file:
+    path: /tmp/images/k8s
+    state: directory
+    mode: '0755'
+
+- name: 传输k8s镜像文件到目标节点
+  copy:
+    src: /opt/files/images/k8s/k8s-images-v1.28.15.tar
+    dest: /tmp/images/k8s/k8s-images-v1.28.15.tar
+    mode: '0644'
+  register: k8s_image_copy
+
+- name: 验证k8s镜像文件传输成功
+  fail:
+    msg: "k8s镜像文件传输失败，请检查源文件路径是否正确"
+  when: k8s_image_copy.failed
+
+- name: 检查k8s镜像文件是否存在
   stat:
-    path: /opt/files/images/k8s/k8s-images-v1.28.15.tar
+    path: /tmp/images/k8s/k8s-images-v1.28.15.tar
   register: k8s_images_file
 
 - name: 导入Kubernetes镜像
-  shell: docker load -i /opt/files/images/k8s/k8s-images-v1.28.15.tar
+  shell: docker load -i /tmp/images/k8s/k8s-images-v1.28.15.tar
   when: k8s_images_file.stat.exists
+
+- name: 创建Calico镜像临时目录
+  file:
+    path: /tmp/images/calico
+    state: directory
+    mode: '0755'
+
+- name: 传输Calico镜像文件到目标节点
+  copy:
+    src: /opt/files/images/calico/calico-images-v3.24.1.tar
+    dest: /tmp/images/calico/calico-images-v3.24.1.tar
+    mode: '0644'
+  register: calico_image_copy
+
+- name: 验证Calico镜像文件传输成功
+  fail:
+    msg: "Calico镜像文件传输失败，请检查源文件路径是否正确"
+  when: calico_image_copy.failed
 
 - name: 检查Calico镜像文件是否存在
   stat:
-    path: /opt/files/images/calico/calico-images-v3.24.1.tar
+    path: /tmp/images/calico/calico-images-v3.24.1.tar
   register: calico_images_file
 
 - name: 导入Calico镜像
-  shell: docker load -i /opt/files/images/calico/calico-images-v3.24.1.tar
+  shell: docker load -i /tmp/images/calico/calico-images-v3.24.1.tar
   when: calico_images_file.stat.exists
 
 - name: 登录Harbor镜像仓库

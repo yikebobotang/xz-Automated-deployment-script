@@ -1,15 +1,33 @@
 ---
-- name: 解压Harbor部署包
-  unarchive:
-    src: /opt/files/harbor-offline-installer-v2.12.1.tgz
-    dest: /opt
-    remote_src: yes
+- name: 创建临时目录/tmp/harbor
+  file:
+    path: /tmp/harbor
+    state: directory
+    mode: '0755'
 
-- name: 进入Harbor安装目录
+- name: 传输Harbor部署包到目标服务器
+  copy:
+    src: /opt/files/harbor-offline-installer-v2.12.1.tgz
+    dest: /tmp/harbor/harbor-offline-installer-v2.12.1.tgz
+    mode: '0644'
+  register: harbor_copy
+
+- name: 验证Harbor部署包传输成功
+  fail:
+    msg: "Harbor部署包传输失败，请检查源文件路径是否正确"
+  when: harbor_copy.failed
+
+- name: 创建Harbor安装目录
   file:
     path: "{{ harbor_home }}"
     state: directory
+    mode: '0755'
 
+- name: 解压Harbor部署包
+  unarchive:
+    src: /tmp/harbor/harbor-offline-installer-v2.12.1.tgz
+    dest: "{{ harbor_home }}"
+    extra_opts: [--strip-components=1]
 
 - name: 配置Harbor
   template:

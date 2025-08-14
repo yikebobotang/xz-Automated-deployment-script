@@ -5,8 +5,27 @@
     state: directory
     mode: '0755'
 
+- name: 创建临时目录/tmp/dockerqudong
+  file:
+    path: /tmp/dockerqudong
+    state: directory
+    mode: '0755'
+  when: gpu == 1
+
+- name: 传输nvidia-docker安装包到目标服务器
+  copy:
+    src: /opt/files/dockerqudong/
+    dest: /tmp/dockerqudong/
+  when: gpu == 1
+  register: docker_driver_copy
+
+- name: 验证安装包传输成功
+  fail:
+    msg: "nvidia-docker安装包传输失败，请检查源文件路径是否正确"
+  when: gpu == 1 and docker_driver_copy.failed
+
 - name: 安装nvidia-docker
-  shell: rpm -ivh /opt/files/dockerqudong/*.rpm --nodeps --force
+  shell: rpm -ivh /tmp/dockerqudong/*.rpm --nodeps --force
   when: gpu == 1
 
 - name: 配置Docker daemon.json - 有GPU

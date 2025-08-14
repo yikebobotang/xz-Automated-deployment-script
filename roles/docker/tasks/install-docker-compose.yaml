@@ -1,10 +1,17 @@
 ---
+- name: 检测docker-compose是否已安装
+  command: which docker-compose
+  register: docker_compose_check
+  ignore_errors: yes
+  changed_when: false
+
 - name: 移动docker-compose到/usr/bin
   copy:
     src: /opt/files/docker-compose/docker-compose
     dest: /usr/bin/docker-compose
     mode: '0755'
     remote_src: yes
+  when: docker_compose_check.rc != 0
 
 - name: 验证docker-compose安装
   command: docker-compose --version
@@ -13,4 +20,4 @@
 
 - name: 显示docker-compose版本
   debug:
-    msg: "{{ docker_compose_version.stdout }}" 
+    msg: "{{ docker_compose_version.stdout }}"
