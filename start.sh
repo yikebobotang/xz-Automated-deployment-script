@@ -4,6 +4,9 @@
 init_server() {
     ansible-playbook -i hosts/hosts --tags="init" setup.yaml -f 20
 }
+install_chrony() {
+    ansible-playbook -i hosts/hosts --tags="chrony" setup.yaml -f 20
+}
 
 install_docker() {
     ansible-playbook -i hosts/hosts --tags="docker" setup.yaml -f 20
@@ -11,6 +14,10 @@ install_docker() {
 
 install_harbor() {
     ansible-playbook -i hosts/hosts --tags="harbor" setup.yaml -f 20
+}
+
+instarll_k8s() {
+    ansible-playbook -i hosts/hosts --tags="install-k8s" setup.yaml -f 20
 }
 join_worker() {
     ansible-playbook -i hosts/hosts --tags="join-worker" setup.yaml -f 20
@@ -23,8 +30,10 @@ menu_list() {
     echo "#                  一键部署脚本                   #"
     echo "##################################################"
     echo "      [1]   所有主机进行系统初始化操作              "
-    echo "      [2]   安装docker                              "
-    echo "      [3]   安装harbor                              "
+    echo "      [2]   安装chrony                              "
+    echo "      [3]   安装docker                              "
+    echo "      [4]   安装harbor                              "
+    echo "      [5]   安装k8s                                "
     echo "      [A]   加入k8s集群                              "
     echo "      [R]   移除k8s集群                              "
     echo "##################################################"
@@ -41,10 +50,16 @@ main() {
                 init_server
                 ;;
             2)
-                install_docker
+                install_chrony
                 ;;
             3)
+                install_docker
+                ;;
+            4)
                 install_harbor
+                ;;
+            5)
+                instarll_k8s
                 ;;
             A)
                 join_worker

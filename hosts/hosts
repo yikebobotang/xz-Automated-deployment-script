@@ -19,7 +19,7 @@
 [join-worker]
 192.168.0.111 host_name=k8s-worker01 k8s_role=worker gpu=0
 
-# 移除k8s主机 ，uninstall_cri_dockerd=false uninstall_docker=false clean_docker_data=false clean_docker_config=false uninstall_k8s=false 表示不移除docker和k8s
+# 移除k8s主机 ，uninstall_cri_dockerd=false uninstall_docker=false clean_docker_data=false clean_docker_config=false uninstall_k8s=false 表示不移除docker和k8s uninstall_chrony=false 表示不移除chrony
 [remove-worker]
 192.168.0.111 host_name=k8s-worker01 
 
@@ -44,3 +44,9 @@ harbor_admin_password=Harbor12345
 
 # harbor端口
 harbor_port=8888
+
+# k8s网段
+pod_network_cidr=192.168.0.0/24
+
+# rancher数据目录
+rancher_data_dir=/home/rancher

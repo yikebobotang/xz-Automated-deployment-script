@@ -1,0 +1,26 @@
+- name: 配置 chrony.conf 文件 (Master 节点)
+  template:
+    src: chrony-master.conf.j2
+    dest: /etc/chrony.conf
+  when: k8s_role is defined and k8s_role == 'master'
+
+- name: 配置 chrony.conf 文件 (Worker 节点)
+  template:
+    src: chrony-worker.conf.j2
+    dest: /etc/chrony.conf
+  when: k8s_role is not defined or k8s_role == 'worker'
+
+- name: 启动并启用 chrony 服务
+  systemd:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: 验证 chrony 状态
+  command: chronyc sources
+  register: chrony_status
+  changed_when: false
+
+- name: 显示 chrony 状态
+  debug:
+    msg: "{{ chrony_status.stdout }}"

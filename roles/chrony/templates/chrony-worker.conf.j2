@@ -1,0 +1,11 @@
+# 查找 k8s 组中 k8s_role == 'master' 的主机
+{% for host in groups['k8s'] if hostvars[host]['k8s_role'] == 'master' %}
+server {{ host }} iburst
+{% endfor %}
+
+# 关键优化参数
+driftfile /var/lib/chrony/drift
+makestep 1.0 -1
+rtcsync
+logdir /var/log/chrony
+log measurements statistics tracking

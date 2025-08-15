@@ -1,0 +1,5 @@
+---
+- name: 安装 Chrony
+  import_tasks: chrony.yaml
+- name: 配置启动 Chrony
+  import_tasks: config-chrony.yaml

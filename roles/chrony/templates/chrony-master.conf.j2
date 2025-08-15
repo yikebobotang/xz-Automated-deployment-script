@@ -1,0 +1,11 @@
+# 允许 Kubernetes 集群节点访问
+allow {{ pod_network_cidr }}
+# 启用本地时钟作为唯一时间源
+local stratum 10
+# 关键优化参数
+stratumweight 0
+driftfile /var/lib/chrony/drift
+makestep 1.0 3
+rtcsync
+logdir /var/log/chrony
+log measurements statistics tracking

@@ -1,0 +1,29 @@
+- name: 检查 chrony 是否已安装
+  command: rpm -aq | grep chrony
+  register: chrony_installed
+  ignore_errors: yes
+  changed_when: false
+
+- name: 卸载已安装的 chrony
+  dnf:
+    name: chrony
+    state: absent
+  when: chrony_installed.rc == 0
+
+- name: 创建临时目录
+  file:
+    path: /tmp/chrony
+    state: directory
+    mode: '0755'
+
+- name: 传输 chrony 安装包到节点
+  copy:
+    src: /opt/files/chrony/chrony-4.6.1-1.el9.x86_64.rpm
+    dest: /tmp/chrony/chrony-4.6.1-1.el9.x86_64.rpm
+    mode: '0644'
+
+- name: 在无网环境下安装 chrony
+  dnf:
+    name: /tmp/chrony/chrony-4.6.1-1.el9.x86_64.rpm
+    state: present
+    disable_gpg_check: yes  

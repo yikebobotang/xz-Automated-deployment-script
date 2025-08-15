@@ -12,6 +12,8 @@
 
 - name: init host
   import_tasks: init-host.yaml
+- name: install chrony
+  import_tasks: install-chrony.yaml
 - name: install docker
   import_tasks: install-docker.yaml
 - name: install cri-dockerd

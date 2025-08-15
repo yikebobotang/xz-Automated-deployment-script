@@ -80,6 +80,12 @@
     daemon_reload: yes
   when: uninstall_docker | default(true) or uninstall_cri_dockerd | default(true)
 
+- name: 卸载已安装的 chrony
+  dnf:
+    name: chrony
+    state: absent
+  when: uninstall_chrony | default(true)
+
 - name: 显示清理完成信息
   debug:
     msg: "工作节点 {{ host_name }} 已完成清理"

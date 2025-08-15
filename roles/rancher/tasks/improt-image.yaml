@@ -1,0 +1,58 @@
+---
+- name: 加载内核模块 ip_tables
+  modprobe:
+  name: ip_tables
+  state: present
+
+- name: 加载内核模块 iptable_filter
+  modprobe:
+    name: iptable_filter
+    state: present
+
+- name: 加载内核模块 iptable_mangle
+  modprobe:
+    name: iptable_mangle
+    state: present
+
+- name: 加载内核模块 xt_conntrack
+  modprobe:
+    name: xt_conntrack
+    state: present
+
+- name: 加载内核模块 xt_REDIRECT
+  modprobe:
+    name: xt_REDIRECT
+    state: present
+
+- name: 加载内核模块 xt_owner
+  modprobe:
+    name: xt_owner
+    state: present
+
+- name: 加载内核模块 xt_multiport
+  modprobe:
+    name: xt_multiport
+    state: present
+
+- name: 加载内核模块 xt_tcpudp
+  modprobe:
+    name: xt_tcpudp
+    state: present
+
+- name: 加载内核模块 xt_statistic
+  modprobe:
+    name: xt_statistic
+    state: present
+
+- name: 加载内核模块 xt_nat
+  modprobe:
+    name: xt_nat
+    state: present
+
+- name: 创建数据目录 /home/rancher
+  file:
+    path: {{ rancher_data_dir}}
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
